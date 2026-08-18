@@ -1,0 +1,42 @@
+name: Auto Sync tk3D Upstream
+
+on:
+  schedule:
+    # Her 6 saatte bir otomatik çalışır (00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
+  # İstediğiniz zaman Actions sekmesinden tek tıkla çalıştırma butonu ekler
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch and Merge from Upstream
+        run: |
+          # Git kimliğini bot olarak ayarla
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Orijinal repoyu upstream olarak tanımla
+          git remote add upstream https://github.com/EsatSimsek/tk3D.git
+          
+          # Orijinal repodaki değişiklikleri çek
+          git fetch upstream master
+          
+          # Eğer kendi reponuzda branch adı main ise: git checkout main
+          # tk3D projesinin varsayılan branch'i master olduğu için master kullanıyoruz:
+          git checkout master
+          
+          # Upstream'deki değişiklikleri merge et
+          git merge upstream/master -m "chore: auto-sync from EsatSimsek/tk3D" --allow-unrelated-histories || exit 0
+          
+          # Güncellemeleri kendi reponuza push edin
+          git push origin master
